@@ -28,11 +28,11 @@ def get_weekly_activity_stackoverflow(api_key, user_id, start_of_week, end_of_we
     }
     response = requests.get(api_url, params=params)
 
-    if response.status_code == 200:
-        return response.json()["items"]
-    else:
+    if response.status_code != 200:
         print(f"Stack Overflow Error: {response.status_code}, {response.text}")
         return None
+
+    return response.json()["items"]
 
 
 def get_start_end_of_week() -> Tuple[Tuple[str, int], Tuple[str, int]]:
@@ -40,12 +40,9 @@ def get_start_end_of_week() -> Tuple[Tuple[str, int], Tuple[str, int]]:
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = today + timedelta(days=6 - today.weekday())
 
-    start_of_week_str = start_of_week.strftime("%Y-%m-%dT00:00:00Z")
-    end_of_week_str = end_of_week.strftime("%Y-%m-%dT23:59:59Z")
-
-    return (start_of_week_str, int(start_of_week.timestamp())), (
-        end_of_week_str,
-        int(end_of_week.timestamp()),
+    return (
+        (start_of_week.strftime("%Y-%m-%dT00:00:00Z"), int(start_of_week.timestamp())),
+        (end_of_week.strftime("%Y-%m-%dT23:59:59Z"), int(end_of_week.timestamp())),
     )
 
 
