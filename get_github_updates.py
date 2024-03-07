@@ -1,5 +1,6 @@
 import requests
 from datetime import datetime, timedelta, timezone
+import yaml
 
 
 def get_new_files_in_last_two_weeks(repo_owner, repo_name, access_token=None):
@@ -19,35 +20,37 @@ def get_new_files_in_last_two_weeks(repo_owner, repo_name, access_token=None):
 
     response = requests.get(base_url, params=params, headers=headers)
 
-    if response.status_code == 200:
-        commits = response.json()
-        new_files = set()
-
-        for commit in commits:
-            commit_url = commit["url"]
-            commit_details = requests.get(commit_url, headers=headers).json()
-            files = commit_details["files"]
-
-            for file in files:
-                if file["status"] == "added" and (
-                    file["filename"].endswith(".ipynb")
-                    or file["filename"].endswith("README.md")
-                ):
-                    new_files.add(file["filename"])
-
-        return sorted(list(new_files))  # Sort the list alphabetically
-    else:
+    if response.status_code != 200:
         print(f"Failed to fetch commits. Status code: {response.status_code}")
         return []
 
+    commits = response.json()
+    new_files = set()
 
-# Replace these with your GitHub repository details
-repo_owner = "GoogleCloudPlatform"
-repo_name = "generative-ai"
-access_token = "YOUR_ACCESS_TOKEN"  # Only required for private repositories
+    for commit in commits:
+        commit_url = commit["url"]
+        commit_details = requests.get(commit_url, headers=headers).json()
+        files = commit_details["files"]
 
-new_files = get_new_files_in_last_two_weeks(repo_owner, repo_name, access_token)
+        for file in files:
+            if file["status"] == "added" and (
+                file["filename"].endswith(".ipynb")
+                or file["filename"].endswith("README.md")
+            ):
+                new_files.add(file["filename"])
 
-print("New files added in the last two weeks (sorted alphabetically):")
-for file in new_files:
-    print(f"https://github.com/GoogleCloudPlatform/generative-ai/tree/main/{file}")
+    return sorted(list(new_files))  # Sort the list alphabetically
+
+
+if __name__ == "__main__":
+    with open("keys.yaml", "r", encoding="utf-8") as f:
+        api_keys = yaml.safe_load(f)
+
+    # Replace these with your GitHub repository details
+    repo_owner = "GoogleCloudPlatform"
+    repo_name = "generative-ai"
+    access_token = api_keys.get("github_token", "")
+
+    print("New files added in the last two weeks (sorted alphabetically):")
+    for f in get_new_files_in_last_two_weeks(repo_owner, repo_name, access_token):
+        print(f"https://github.com/GoogleCloudPlatform/generative-ai/tree/main/{f}")
