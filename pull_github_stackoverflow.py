@@ -17,8 +17,9 @@ def get_weekly_activity_github(username, token, start_of_week, end_of_week):
 
 
 def get_weekly_activity_stackoverflow(api_key, user_id, start_of_week, end_of_week):
-    api_url = f"https://api.stackexchange.com/2.3/users/{user_id}/answers?filter=!6WPIomp1bSN.5"
-    params = {
+    # Fetch answers
+    api_url_answers = f"https://api.stackexchange.com/2.3/users/{user_id}/answers?filter=!6WPIomp1bSN.5"
+    params_answers = {
         "site": "stackoverflow",
         "fromdate": start_of_week,
         "todate": end_of_week,
@@ -26,13 +27,37 @@ def get_weekly_activity_stackoverflow(api_key, user_id, start_of_week, end_of_we
         "sort": "activity",
         "key": api_key,
     }
-    response = requests.get(api_url, params=params)
+    response_answers = requests.get(api_url_answers, params=params_answers)
 
-    if response.status_code != 200:
-        print(f"Stack Overflow Error: {response.status_code}, {response.text}")
+    if response_answers.status_code != 200:
+        print(
+            f"Stack Overflow Answers Error: {response_answers.status_code}, {response_answers.text}"
+        )
         return None
 
-    return response.json()["items"]
+    answers = response_answers.json()["items"]
+
+    # Fetch comments
+    api_url_comments = f"https://api.stackexchange.com/2.3/users/{user_id}/comments"
+    params_comments = {
+        "site": "stackoverflow",
+        "fromdate": start_of_week,
+        "todate": end_of_week,
+        "order": "desc",
+        "sort": "creation",
+        "key": api_key,
+    }
+    response_comments = requests.get(api_url_comments, params=params_comments)
+
+    if response_comments.status_code != 200:
+        print(
+            f"Stack Overflow Comments Error: {response_comments.status_code}, {response_comments.text}"
+        )
+        return answers, None
+
+    comments = response_comments.json()["items"]
+
+    return answers, comments
 
 
 def get_start_end_of_week() -> Tuple[Tuple[str, int], Tuple[str, int]]:
@@ -61,10 +86,6 @@ def format_github_as_markdown(issues, username):
     return reviewed_issues, contributed_issues
 
 
-def format_stackoverflow_as_markdown(answers):
-    return [f"- [{answer['title']}]({answer['share_link']})" for answer in answers]
-
-
 if __name__ == "__main__":
     with open("keys.yaml", "r", encoding="utf-8") as file:
         api_keys = yaml.safe_load(file)
@@ -85,23 +106,40 @@ if __name__ == "__main__":
             github_issues, github_username
         )
 
-        print("GitHub Activity:")
+        print("## GitHub\n")
 
         if contributed_issues:
-            print("\nContributed:")
+            print("\n### Contributed\n")
             print("\n".join(contributed_issues))
 
         if reviewed_issues:
-            print("\nReviewed:")
+            print("\n### Reviewed\n")
             print("\n".join(reviewed_issues))
 
     # Stack Overflow
     stackoverflow_api_key = api_keys.get("stackoverflow_api_key", "")
     stackoverflow_user_id = "6216983"
-    stackoverflow_answers = get_weekly_activity_stackoverflow(
+    stackoverflow_answers, stackoverflow_comments = get_weekly_activity_stackoverflow(
         stackoverflow_api_key, stackoverflow_user_id, start_of_week_ts, end_of_week_ts
     )
 
     if stackoverflow_answers:
-        print("\nStack Overflow Activity:")
-        print("\n".join(format_stackoverflow_as_markdown(stackoverflow_answers)))
+        print("\n## 🥞 Stack Overflow\n")
+        print(
+            "\n".join(
+                [
+                    f"- [{answer['title']}]({answer['share_link']})"
+                    for answer in stackoverflow_answers
+                ]
+            )
+        )
+
+    if stackoverflow_comments:
+        print(
+            "\n".join(
+                [
+                    f"- https://stackoverflow.com/questions/{comment['post_id']}"
+                    for comment in stackoverflow_comments
+                ]
+            )
+        )
