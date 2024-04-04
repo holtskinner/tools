@@ -109,7 +109,7 @@ if __name__ == "__main__":
         print("## GitHub\n")
 
         if contributed_issues:
-            print("\n### Contributed\n")
+            print("### Contributed\n")
             print("\n".join(contributed_issues))
 
         if reviewed_issues:
