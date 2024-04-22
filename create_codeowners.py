@@ -24,7 +24,11 @@ def create_codeowners(codeowners_path, directory, author):
         file.write(codeowners_content)
 
 
-def process_directory(directory, codeowners_path):
+def process_directory(directory, codeowners_path, parent_folder):
+
+    with open(codeowners_path, "r", encoding="utf-8") as file:
+        codeowners_content = file.read()
+
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(".ipynb"):
@@ -32,19 +36,21 @@ def process_directory(directory, codeowners_path):
                 author_name, author_github = find_authors(notebook_path)
 
                 if author_name and author_github:
-                    create_codeowners(codeowners_path, root, author_github)
-                    print(f"CODEOWNERS entry created for {author_name} in {root}")
+                    if author_github not in codeowners_content:
+                        new_path = f"/{root}/{file}".replace(parent_folder, "")
+                        print(
+                            f"{new_path}\t@{author_github} @GoogleCloudPlatform/generative-ai-devrel"
+                        )
+
+                    # print(f"CODEOWNERS entry created for {author_name} in {root}")
 
 
 if __name__ == "__main__":
     # Replace 'your_directory_path' with the path to your directory containing Jupyter Notebooks
+    parent_folder = "/Users/holtskinner/GitHub/"
     directory_path = "/Users/holtskinner/GitHub/generative-ai/"
 
     # Replace 'your_codeowners_path' with the desired path for the CODEOWNERS file
     codeowners_path = "/Users/holtskinner/GitHub/generative-ai/.github/CODEOWNERS"
 
-    # Initialize or clear the existing CODEOWNERS file
-    with open(codeowners_path, "w", encoding="utf-8"):
-        pass
-
-    process_directory(directory_path, codeowners_path)
+    process_directory(directory_path, codeowners_path, parent_folder)
