@@ -76,6 +76,8 @@ def format_github_as_markdown(issues, username):
     contributed_issues = []
 
     for issue in issues:
+        if "(deps):" in issue["title"] or "(deps-dev)" in issue["title"]:
+            continue
         target_list = (
             contributed_issues
             if issue["user"]["login"] == username
