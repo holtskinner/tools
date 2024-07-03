@@ -4,8 +4,8 @@ import yaml
 from typing import Tuple
 
 
-def get_weekly_activity_github(username, token, start_of_week, end_of_week):
-    api_url = f"https://api.github.com/search/issues?q=involves:{username}+is:issue+is:pr+created:{start_of_week}..{end_of_week}"
+def get_activity_github(username, token, start_date, end_date):
+    api_url = f"https://api.github.com/search/issues?q=involves:{username}+is:issue+is:pr+created:{start_date}..{end_date}"
     headers = {"Authorization": f"token {token}"}
     response = requests.get(api_url, headers=headers)
 
@@ -16,13 +16,13 @@ def get_weekly_activity_github(username, token, start_of_week, end_of_week):
     return response.json()["items"]
 
 
-def get_weekly_activity_stackoverflow(api_key, user_id, start_of_week, end_of_week):
+def get_activity_stackoverflow(api_key, user_id, start_date, end_date):
     # Fetch answers
     api_url_answers = f"https://api.stackexchange.com/2.3/users/{user_id}/answers?filter=!6WPIomp1bSN.5"
     params_answers = {
         "site": "stackoverflow",
-        "fromdate": start_of_week,
-        "todate": end_of_week,
+        "fromdate": start_date,
+        "todate": end_date,
         "order": "desc",
         "sort": "activity",
         "key": api_key,
@@ -41,8 +41,8 @@ def get_weekly_activity_stackoverflow(api_key, user_id, start_of_week, end_of_we
     api_url_comments = f"https://api.stackexchange.com/2.3/users/{user_id}/comments"
     params_comments = {
         "site": "stackoverflow",
-        "fromdate": start_of_week,
-        "todate": end_of_week,
+        "fromdate": start_date,
+        "todate": end_date,
         "order": "desc",
         "sort": "creation",
         "key": api_key,
@@ -92,15 +92,13 @@ if __name__ == "__main__":
     with open("keys.yaml", "r", encoding="utf-8") as file:
         api_keys = yaml.safe_load(file)
 
-    (start_of_week, start_of_week_ts), (end_of_week, end_of_week_ts) = (
-        get_start_end_of_week()
-    )
+    (start_date, start_date_ts), (end_date, end_date_ts) = get_start_end_of_week()
 
     # GitHub
     github_username = "holtskinner"
     github_token = api_keys.get("github_token", "")
-    github_issues = get_weekly_activity_github(
-        github_username, github_token, start_of_week, end_of_week
+    github_issues = get_activity_github(
+        github_username, github_token, start_date, end_date
     )
 
     if github_issues:
@@ -121,8 +119,8 @@ if __name__ == "__main__":
     # Stack Overflow
     stackoverflow_api_key = api_keys.get("stackoverflow_api_key", "")
     stackoverflow_user_id = "6216983"
-    stackoverflow_answers, stackoverflow_comments = get_weekly_activity_stackoverflow(
-        stackoverflow_api_key, stackoverflow_user_id, start_of_week_ts, end_of_week_ts
+    stackoverflow_answers, stackoverflow_comments = get_activity_stackoverflow(
+        stackoverflow_api_key, stackoverflow_user_id, start_date_ts, end_date_ts
     )
 
     if stackoverflow_answers:
