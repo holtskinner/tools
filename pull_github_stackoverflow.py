@@ -60,8 +60,8 @@ def get_activity_stackoverflow(api_key, user_id, start_date, end_date):
     return answers, comments
 
 
-def get_start_end_of_week() -> Tuple[Tuple[str, int], Tuple[str, int]]:
-    today = datetime.today()
+def get_start_end_of_week(days_ago: int = 0) -> Tuple[Tuple[str, int], Tuple[str, int]]:
+    today = datetime.today() - timedelta(days=days_ago)
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = today + timedelta(days=6 - today.weekday())
 
@@ -92,7 +92,11 @@ if __name__ == "__main__":
     with open("keys.yaml", "r", encoding="utf-8") as file:
         api_keys = yaml.safe_load(file)
 
-    (start_date, start_date_ts), (end_date, end_date_ts) = get_start_end_of_week()
+    # TODO: Edit if running late.
+    days_ago = 0
+    (start_date, start_date_ts), (end_date, end_date_ts) = get_start_end_of_week(
+        days_ago=days_ago
+    )
 
     # GitHub
     github_username = "holtskinner"

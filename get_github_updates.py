@@ -28,7 +28,7 @@ def get_new_files_in_last_two_weeks(repo_owner, repo_name, access_token=None):
     base_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/commits"
 
     # Calculate the date two weeks ago from today using timezone-aware objects
-    two_weeks_ago = datetime.now(timezone.utc) - timedelta(weeks=2)
+    two_weeks_ago = datetime.now(timezone.utc) - timedelta(weeks=4)
     iso_two_weeks_ago = two_weeks_ago.isoformat()
 
     params = {
