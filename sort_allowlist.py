@@ -1,14 +1,13 @@
 def sort_and_deduplicate(file_path):
     """Sorts lines in a file alphabetically (case-sensitive) and removes duplicates."""
 
-    with open(file_path, "r", encoding="utf-8") as file:
-        words = file.readlines()  # Read all lines into a list
+    spelling_allow_file = file_path
 
-    unique_words = list(set(words))  # Remove duplicates
-    unique_words.sort(key=str.lower)  # Sort alphabetically
+    with open(spelling_allow_file, "r", encoding="utf-8") as file:
+        unique_words = sorted(set(file))
 
-    with open(file_path, "w", encoding="utf-8") as file:
-        file.writelines(unique_words)  # Write the sorted, unique lines back
+    with open(spelling_allow_file, "w", encoding="utf-8") as file:
+        file.writelines(unique_words)
 
 
 # --- Main Execution ---
