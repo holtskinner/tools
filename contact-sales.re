@@ -1,0 +1,1 @@
+[^"']contact\s(?:sales[^"']|(?:your\s+(?:(?:{{\s?gcp_name\s?}})|((?:Google\s?)?(?:Cloud\s?)?(?:(?:customer\sengineer)|(?:account\s(?:team)|(?:manager))|(?:{{\s?sales_link\s?}})|(?:sales\srepresentative))))))
