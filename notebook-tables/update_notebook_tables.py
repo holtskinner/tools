@@ -24,6 +24,18 @@ RAW_URL_PREFIX = (
     "https://raw.githubusercontent.com/GoogleCloudPlatform/generative-ai/main/"
 )
 
+OLD_TEXT_BLOCK = """### Set Google Cloud project information and initialize Vertex AI SDK
+
+To get started using Vertex AI, you must have an existing Google Cloud project and [enable the Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
+
+Learn more about [setting up a project and a development environment](https://cloud.google.com/vertex-ai/docs/start/cloud-environment)."""
+
+NEW_TEXT_BLOCK = """### Set Google Cloud project information
+
+To get started using Agent Platform, you must have an existing Google Cloud project and [enable the Agent Platform API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
+
+Learn more about [setting up a project](https://docs.cloud.google.com/resource-manager/docs/creating-managing-projects) and a [development environment](https://cloud.google.com/docs/authentication/set-up-adc-local-dev-environment)."""
+
 
 def fix_links(content, rel_path):
     """Replaces placeholders in the template with notebook-specific links."""
@@ -90,24 +102,33 @@ def update_notebooks(base_path="."):
                         nb = nbformat.read(f, as_version=4)
 
                     modified = False
+                    table_updated = False
                     for cell in nb.cells:
-                        if cell.cell_type == "markdown" and "<table" in cell.source:
-                            source = cell.source
-                            # Find the start of the table
-                            table_idx = source.find("<table")
-
-                            # Check if "vertex-ai" is in the table portion of the cell
-                            if "vertex-ai" in source[table_idx:].lower():
-                                # Prepare the new content for this specific notebook
-                                new_content = fix_links(new_table_template, rel_path)
-
-                                # Replace from <table to the end of the cell
-                                # Note: We assume the table/sharing links are at the end of the cell
-                                cell.source = source[:table_idx] + new_content
+                        if cell.cell_type == "markdown":
+                            # Replace the setup block if present
+                            if OLD_TEXT_BLOCK in cell.source:
+                                cell.source = cell.source.replace(
+                                    OLD_TEXT_BLOCK, NEW_TEXT_BLOCK
+                                )
                                 modified = True
 
-                            # Only check the first markdown cell containing a table
-                            break
+                            # Only check the first markdown cell containing a table to update
+                            if not table_updated and "<table" in cell.source:
+                                source = cell.source
+                                # Find the start of the table
+                                table_idx = source.find("<table")
+
+                                # Check if "vertex-ai" is in the table portion of the cell
+                                if "vertex-ai" in source[table_idx:].lower():
+                                    # Prepare the new content for this specific notebook
+                                    new_content = fix_links(
+                                        new_table_template, rel_path
+                                    )
+
+                                    # Replace from <table to the end of the cell
+                                    cell.source = source[:table_idx] + new_content
+                                    modified = True
+                                    table_updated = True
 
                     if modified:
                         with open(file_path, "w", encoding="utf-8") as f:
