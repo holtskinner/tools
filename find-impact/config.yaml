@@ -1,0 +1,55 @@
+# FindImpact Configuration
+# Configure your content sources and tracking preferences here.
+
+developer:
+  name: "Holt Skinner"
+  role: "Staff Developer Relations Engineer"
+  company: "Google Cloud AI"
+
+sources:
+  github:
+    username: "holtskinner"
+    # Optional list of organizations or repositories to prioritize or filter by
+    orgs: ["GoogleCloudPlatform", "google-gemini"]
+  
+  stackoverflow:
+    # Your numeric Stack Overflow User ID.
+    # Find it in your profile URL: https://stackoverflow.com/users/USER_ID/username
+    # Set to null or remove if you don't wish to track Stack Overflow.
+    user_id: null
+  
+  medium:
+    # Your Medium handle without the '@' sign
+    username: "holtskinner"
+    # List of publications to scan (e.g. "google-cloud" is the Google Cloud Community publication)
+    publications: ["google-cloud"]
+  
+  youtube:
+    # YouTube channels to scan for your content
+    channels:
+      - name: "Google Cloud Tech"
+        id: "UCJS9pqu9BzkAMNTmzNMNhvg"
+      - name: "Google Cloud"
+        id: "UCTMRxtyHoE3LPcrl-kT4AQQ"
+    # Search keywords used to identify videos featuring you
+    search_queries: ["Holt Skinner"]
+    # Specific video IDs or URLs to monitor directly (bypasses RSS page limits, works with Zero-Auth)
+    custom_videos:
+      - "BkE69dM0G-w" # What is Document AI Workbench?
+      - "F_jyoe1lQhg" # What is Document AI?
+      - "9izcbNYmP8M" # How to use Document AI
+      - "qeuRQAityB8" # What is Human-in-the-Loop?
+      - "95FvHHKH5Bg" # What is Document AI Warehouse?
+      - "j4-LXxOlCOA" # Document AI Overview (Spanish)
+
+  
+  custom_rss:
+    # You can add any additional RSS feeds to track (e.g., your personal blog, Dev.to articles, podcasts)
+    - name: "Holt Skinner's Dev.to Articles"
+      url: "https://dev.to/feed/holtskinner"
+      enabled: false
+
+export:
+  html_report_path: "dashboard.html"
+  markdown_report_path: "impact_report.md"
+  cache_path: ".find_impact_cache.json"

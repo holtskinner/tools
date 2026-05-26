@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holt Skinner - FindImpact Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0c0a0f;
+            --card-bg: rgba(20, 16, 28, 0.6);
+            --card-border: rgba(255, 255, 255, 0.06);
+            --text-primary: #f4f4f7;
+            --text-secondary: #94a3b8;
+            --primary: #8b5cf6;
+            --primary-glow: rgba(139, 92, 246, 0.15);
+            
+            --github-color: #a78bfa;
+            --youtube-color: #ef4444;
+            --stackoverflow-color: #f97316;
+            --medium-color: #10b981;
+            --rss-color: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 40%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Glassmorphism Panel Common Style */
+        .glass-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Header section */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 5%;
+            right: 5%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--card-border), transparent);
+        }
+
+        .header-title h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.2rem;
+        }
+
+        .header-title p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .header-meta {
+            text-align: right;
+        }
+
+        .badge-devrel {
+            background: var(--primary-glow);
+            border: 1px solid var(--primary);
+            color: #c084fc;
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px var(--primary-glow);
+            display: inline-block;
+        }
+
+        .last-updated {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* Grid metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+        }
+
+        .metric-card.github::before { background: var(--github-color); }
+        .metric-card.youtube::before { background: var(--youtube-color); }
+        .metric-card.stackoverflow::before { background: var(--stackoverflow-color); }
+        .metric-card.medium::before { background: var(--medium-color); }
+        .metric-card.total::before { background: var(--primary); }
+
+        .metric-card.github:hover { box-shadow: 0 10px 25px -5px rgba(167, 139, 250, 0.15); }
+        .metric-card.youtube:hover { box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.15); }
+        .metric-card.stackoverflow:hover { box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.15); }
+        .metric-card.medium:hover { box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.15); }
+        .metric-card.total:hover { box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.15); }
+
+        .metric-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-val {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1;
+        }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            header {
+                flex-direction: column;
+                text-align: center;
+                gap: 1.5rem;
+            }
+            .header-meta {
+                text-align: center;
+            }
+        }
+
+        .chart-box {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 320px;
+        }
+
+        .chart-box h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            align-self: flex-start;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .search-box {
+            position: relative;
+            flex-grow: 1;
+            max-width: 450px;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 0.8rem 1rem 0.8rem 2.5rem;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            fill: var(--text-secondary);
+            width: 1.1rem;
+            height: 1.1rem;
+            pointer-events: none;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .filter-btn.active {
+            background: var(--primary-glow);
+            color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        /* Items Grid */
+        .items-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.2rem;
+            margin-bottom: 4rem;
+        }
+
+        .content-card {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            align-items: center;
+        }
+
+        .content-card:hover {
+            transform: scale(1.01);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+        }
+
+        .content-card.github .card-icon { background: rgba(167, 139, 250, 0.08); border-color: rgba(167, 139, 250, 0.2); }
+        .content-card.youtube .card-icon { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2); }
+        .content-card.stackoverflow .card-icon { background: rgba(249, 115, 22, 0.08); border-color: rgba(249, 115, 22, 0.2); }
+        .content-card.medium .card-icon { background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.2); }
+        .content-card.rss .card-icon { background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.2); }
+
+        .card-body {
+            min-width: 0; /* Enable text truncation */
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.4rem;
+            font-size: 0.8rem;
+        }
+
+        .card-platform-badge {
+            text-transform: uppercase;
+            font-weight: 700;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+        }
+
+        .github .card-platform-badge { background: rgba(167, 139, 250, 0.15); color: var(--github-color); }
+        .youtube .card-platform-badge { background: rgba(239, 68, 68, 0.15); color: var(--youtube-color); }
+        .stackoverflow .card-platform-badge { background: rgba(249, 115, 22, 0.15); color: var(--stackoverflow-color); }
+        .medium .card-platform-badge { background: rgba(16, 185, 129, 0.15); color: var(--medium-color); }
+        .rss .card-platform-badge { background: rgba(59, 130, 246, 0.15); color: var(--rss-color); }
+
+        .card-date {
+            color: var(--text-secondary);
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.4rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-summary {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .card-metrics {
+            display: flex;
+            gap: 0.8rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .metric-tag {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .metric-tag svg {
+            width: 14px;
+            height: 14px;
+            fill: var(--text-secondary);
+        }
+
+        .btn-visit {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: #ffffff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-visit:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 12px var(--primary-glow);
+            transform: scale(1.1);
+        }
+
+        .btn-visit svg {
+            width: 16px;
+            height: 16px;
+            fill: #ffffff;
+        }
+
+        /* YouTube specific Thumbnail style inside feed if available */
+        .yt-thumb-container {
+            width: 120px;
+            height: 68px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--card-border);
+        }
+
+        .yt-thumb-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .content-card:hover .yt-thumb-container img {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 650px) {
+            .content-card {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 1rem;
+            }
+            .card-icon, .yt-thumb-container {
+                margin: 0 auto;
+            }
+            .card-meta {
+                justify-content: center;
+            }
+            .card-actions {
+                justify-content: center;
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Dashboard Header -->
+        <header class="glass-panel">
+            <div class="header-title">
+                <h1>Holt Skinner</h1>
+                <p>Staff Developer Relations Engineer @ Google Cloud AI</p>
+            </div>
+            <div class="header-meta">
+                <span class="badge-devrel">FindImpact Active</span>
+                <p class="last-updated">Compiled: 2026-05-26 13:02:07</p>
+            </div>
+        </header>
+
+        <!-- KPI Metrics Grid -->
+        <section class="metrics-grid">
+            <div class="glass-panel metric-card total" onclick="setFilter('all')">
+                <p class="metric-title">Aggregate Reach</p>
+                <p class="metric-val" id="cnt-total">0</p>
+            </div>
+            <div class="glass-panel metric-card github" onclick="setFilter('github')">
+                <p class="metric-title">GitHub Items</p>
+                <p class="metric-val" id="cnt-github">0</p>
+            </div>
+            <div class="glass-panel metric-card youtube" onclick="setFilter('youtube')">
+                <p class="metric-title">YouTube Videos</p>
+                <p class="metric-val" id="cnt-youtube">0</p>
+            </div>
+            <div class="glass-panel metric-card stackoverflow" onclick="setFilter('stackoverflow')">
+                <p class="metric-title">StackOverflow Answers</p>
+                <p class="metric-val" id="cnt-stackoverflow">0</p>
+            </div>
+            <div class="glass-panel metric-card medium" onclick="setFilter('medium')">
+                <p class="metric-title">Medium Articles</p>
+                <p class="metric-val" id="cnt-medium">0</p>
+            </div>
+        </section>
+
+        <!-- Charts Dashboard -->
+        <section class="charts-section">
+            <div class="glass-panel chart-box">
+                <h3>Platform Share</h3>
+                <div class="chart-container">
+                    <canvas id="shareChart"></canvas>
+                </div>
+            </div>
+            <div class="glass-panel chart-box">
+                <h3>Activity Over Time</h3>
+                <div class="chart-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search and Filters Control Panel -->
+        <section class="glass-panel control-panel">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24">
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                <input type="text" id="searchInput" placeholder="Search title, description, or tag..." oninput="handleSearch()">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" id="btn-all" onclick="setFilter('all')">All</button>
+                <button class="filter-btn" id="btn-github" onclick="setFilter('github')">GitHub</button>
+                <button class="filter-btn" id="btn-youtube" onclick="setFilter('youtube')">YouTube</button>
+                <button class="filter-btn" id="btn-stackoverflow" onclick="setFilter('stackoverflow')">Stack Overflow</button>
+                <button class="filter-btn" id="btn-medium" onclick="setFilter('medium')">Medium</button>
+                <button class="filter-btn" id="btn-rss" onclick="setFilter('rss')">RSS Feeds</button>
+            </div>
+        </section>
+
+        <!-- Contribution Feed -->
+        <section class="items-grid" id="itemsGrid">
+            <!-- Rendered dynamically by client-side javascript -->
+        </section>
+    </div>
+
+    <!-- Client-side script -->
+    <script>
+        // Injecting the raw content items data directly into JS from python
+        const contentData = [{"id": "github-commit-c043441386c405434c59209deb735a4108886387", "title": "[GoogleCloudPlatform/generative-ai] Update format script to combine/remove spelling/expect", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/c043441386c405434c59209deb735a4108886387", "platform": "github", "publish_date": "2026-05-26T10:12:45.000-05:00", "summary": "Update format script to combine/remove spelling/expect", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "c043441386c405434c59209deb735a4108886387"}}, {"id": "github-commit-22623a4ee504077a8fbaeeff574b7f7cb50cdfcb", "title": "[GoogleCloudPlatform/generative-ai] Update gemini-3-flash-preview to gemini-3.5-flash GA (#2889)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/22623a4ee504077a8fbaeeff574b7f7cb50cdfcb", "platform": "github", "publish_date": "2026-05-22T13:51:36.000-05:00", "summary": "Update gemini-3-flash-preview to gemini-3.5-flash GA (#2889)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "22623a4ee504077a8fbaeeff574b7f7cb50cdfcb"}}, {"id": "github-commit-3702cb31f8e15f593dc21b99ecba5f28a5f0dde5", "title": "[GoogleCloudPlatform/generative-ai] Add Gemini 3.5 Flash Notebook (#2876)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/3702cb31f8e15f593dc21b99ecba5f28a5f0dde5", "platform": "github", "publish_date": "2026-05-19T10:24:56.000-07:00", "summary": "Add Gemini 3.5 Flash Notebook (#2876)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "3702cb31f8e15f593dc21b99ecba5f28a5f0dde5"}}, {"id": "github-commit-96c18b4ff4304a0dbdb03a2626a5f13e1b2627c4", "title": "[GoogleCloudPlatform/generative-ai] Create Deep Research Notebook (#2873)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/96c18b4ff4304a0dbdb03a2626a5f13e1b2627c4", "platform": "github", "publish_date": "2026-05-18T09:45:08.000-06:00", "summary": "Create Deep Research Notebook (#2873)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "96c18b4ff4304a0dbdb03a2626a5f13e1b2627c4"}}, {"id": "github-commit-bed296c45064c4245e10a0849ab42a5aafa150a2", "title": "[GoogleCloudPlatform/cxas-scrapi] Merge branch 'main' into switch-uv", "url": "https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/bed296c45064c4245e10a0849ab42a5aafa150a2", "platform": "github", "publish_date": "2026-05-13T14:57:57.000-05:00", "summary": "Merge branch 'main' into switch-uv", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/cxas-scrapi", "type": "commit", "sha": "bed296c45064c4245e10a0849ab42a5aafa150a2"}}, {"id": "github-commit-b2bf41f207792a4408e6670399830894627f271b", "title": "[GoogleCloudPlatform/cxas-scrapi] Remove pre-commit from ci", "url": "https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/b2bf41f207792a4408e6670399830894627f271b", "platform": "github", "publish_date": "2026-05-13T14:22:54.000-05:00", "summary": "Remove pre-commit from ci", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/cxas-scrapi", "type": "commit", "sha": "b2bf41f207792a4408e6670399830894627f271b"}}, {"id": "github-commit-c8359550f91e12b4183cbdfa30eb819ac5fa16ff", "title": "[GoogleCloudPlatform/cxas-scrapi] Update uv action version", "url": "https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/c8359550f91e12b4183cbdfa30eb819ac5fa16ff", "platform": "github", "publish_date": "2026-05-13T14:21:14.000-05:00", "summary": "Update uv action version", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/cxas-scrapi", "type": "commit", "sha": "c8359550f91e12b4183cbdfa30eb819ac5fa16ff"}}, {"id": "github-commit-45fed246f1e0deb239106f5c26ff0c812109e676", "title": "[GoogleCloudPlatform/cxas-scrapi] ruff formatting", "url": "https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/45fed246f1e0deb239106f5c26ff0c812109e676", "platform": "github", "publish_date": "2026-05-13T14:18:41.000-05:00", "summary": "ruff formatting", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/cxas-scrapi", "type": "commit", "sha": "45fed246f1e0deb239106f5c26ff0c812109e676"}}, {"id": "github-commit-4e02af379c669bfb58772393c1ab408e8974a392", "title": "[GoogleCloudPlatform/cxas-scrapi] Merge branch 'switch-uv' of https://github.com/holtskinner/cxas-scrapi into switch-uv", "url": "https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/4e02af379c669bfb58772393c1ab408e8974a392", "platform": "github", "publish_date": "2026-05-13T14:17:31.000-05:00", "summary": "Merge branch 'switch-uv' of https://github.com/holtskinner/cxas-scrapi into switch-uv", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/cxas-scrapi", "type": "commit", "sha": "4e02af379c669bfb58772393c1ab408e8974a392"}}, {"id": "github-commit-68a42e97bb47c038ca0c285619403c9810d76ae3", "title": "[GoogleCloudPlatform/cxas-scrapi] Remove extra linting/codecov", "url": "https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/68a42e97bb47c038ca0c285619403c9810d76ae3", "platform": "github", "publish_date": "2026-05-13T14:17:28.000-05:00", "summary": "Remove extra linting/codecov", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/cxas-scrapi", "type": "commit", "sha": "68a42e97bb47c038ca0c285619403c9810d76ae3"}}, {"id": "github-commit-236e6f0b56f9a5f76f3fd9c323553a651fa06ae2", "title": "[GoogleCloudPlatform/cxas-scrapi] Merge branch 'main' into switch-uv", "url": "https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/236e6f0b56f9a5f76f3fd9c323553a651fa06ae2", "platform": "github", "publish_date": "2026-05-13T14:13:53.000-05:00", "summary": "Merge branch 'main' into switch-uv", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/cxas-scrapi", "type": "commit", "sha": "236e6f0b56f9a5f76f3fd9c323553a651fa06ae2"}}, {"id": "github-commit-2d724ee6c4b422653b90bcf687c29d4c4b1708d1", "title": "[GoogleCloudPlatform/cxas-scrapi] add jinja2 to pyproject and fix twine", "url": "https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/2d724ee6c4b422653b90bcf687c29d4c4b1708d1", "platform": "github", "publish_date": "2026-05-13T11:37:42.000-05:00", "summary": "add jinja2 to pyproject and fix twine", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/cxas-scrapi", "type": "commit", "sha": "2d724ee6c4b422653b90bcf687c29d4c4b1708d1"}}, {"id": "github-commit-78f6d6dd54ee4125d19271e3984256865bdede48", "title": "[GoogleCloudPlatform/cxas-scrapi] Update python 3.14", "url": "https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/78f6d6dd54ee4125d19271e3984256865bdede48", "platform": "github", "publish_date": "2026-05-13T11:28:29.000-05:00", "summary": "Update python 3.14", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/cxas-scrapi", "type": "commit", "sha": "78f6d6dd54ee4125d19271e3984256865bdede48"}}, {"id": "github-commit-06663e36bcc5a19a247704ac0a65862f1465190f", "title": "[GoogleCloudPlatform/cxas-scrapi] build: switch package management/build to uv", "url": "https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/06663e36bcc5a19a247704ac0a65862f1465190f", "platform": "github", "publish_date": "2026-05-13T11:10:02.000-05:00", "summary": "build: switch package management/build to uv", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/cxas-scrapi", "type": "commit", "sha": "06663e36bcc5a19a247704ac0a65862f1465190f"}}, {"id": "github-commit-d06a1d495a5d61e2bf3d77fe73182385daadc9c3", "title": "[GoogleCloudPlatform/generative-ai] ci: Update Gemini Style Guide Models (#2869)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/d06a1d495a5d61e2bf3d77fe73182385daadc9c3", "platform": "github", "publish_date": "2026-05-13T09:51:22.000-05:00", "summary": "ci: Update Gemini Style Guide Models (#2869)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "d06a1d495a5d61e2bf3d77fe73182385daadc9c3"}}, {"id": "github-pr-", "title": "[GoogleCloudPlatform/generative-ai] Opened Pull Request #2869: ", "url": "", "platform": "github", "publish_date": "2026-05-13T14:50:04Z", "summary": "Pull request in GoogleCloudPlatform/generative-ai", "metrics": {"comments": 0, "commits": 0, "additions": 0, "deletions": 0}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "pull_request", "pr_number": 2869, "action": "opened", "merged": false}}, {"id": "github-commit-15febc473f49ebc5cd4831461d4cd41a24967b4f", "title": "[GoogleCloudPlatform/generative-ai] Replace Gemini 3.1 Flash-Lite Preview with GA ID", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/15febc473f49ebc5cd4831461d4cd41a24967b4f", "platform": "github", "publish_date": "2026-05-12T15:40:49.000-05:00", "summary": "Replace Gemini 3.1 Flash-Lite Preview with GA ID", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "15febc473f49ebc5cd4831461d4cd41a24967b4f"}}, {"id": "github-commit-e4381da701441451e85ac3569d7405de024db9ce", "title": "[GoogleCloudPlatform/generative-ai] Update spell check for vertex ai", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/e4381da701441451e85ac3569d7405de024db9ce", "platform": "github", "publish_date": "2026-05-12T14:06:39.000-05:00", "summary": "Update spell check for vertex ai", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "e4381da701441451e85ac3569d7405de024db9ce"}}, {"id": "github-commit-9121b1c6bc8e2f1e0ccc46e7c043cac2fcaa5bb5", "title": "[GoogleCloudPlatform/devrel-demos] Merge pull request #1172 from cuppibla/add-virtual-fitting-room-demo", "url": "https://github.com/GoogleCloudPlatform/devrel-demos/commit/9121b1c6bc8e2f1e0ccc46e7c043cac2fcaa5bb5", "platform": "github", "publish_date": "2026-05-12T09:38:25.000-05:00", "summary": "Merge pull request #1172 from cuppibla/add-virtual-fitting-room-demo\n\ncodelabs/virtual-fitting-room: add Flutter + ADK Go virtual try-on demo", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/devrel-demos", "type": "commit", "sha": "9121b1c6bc8e2f1e0ccc46e7c043cac2fcaa5bb5"}}, {"id": "github-commit-c01a0ba35ef6641b251baa2c4db715837c312085", "title": "[GoogleCloudPlatform/generative-ai] Cleanup Function Calling Content (#2855)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/c01a0ba35ef6641b251baa2c4db715837c312085", "platform": "github", "publish_date": "2026-05-07T11:37:57.000-05:00", "summary": "Cleanup Function Calling Content (#2855)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "c01a0ba35ef6641b251baa2c4db715837c312085"}}, {"id": "github-commit-d84e8d5e4ad21dfca8741d9992dab9406c01aba8", "title": "[GoogleCloudPlatform/generative-ai] Update Gen AI SDK to use Enterprise instead of vertexai (#2839)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/d84e8d5e4ad21dfca8741d9992dab9406c01aba8", "platform": "github", "publish_date": "2026-05-07T10:35:49.000-05:00", "summary": "Update Gen AI SDK to use Enterprise instead of vertexai (#2839)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "d84e8d5e4ad21dfca8741d9992dab9406c01aba8"}}, {"id": "github-commit-2790d77ec441d4ede9b3c80cd2c6f5954e4fddd6", "title": "[GoogleCloudPlatform/generative-ai] Cleanup GenMedia Assets (#2849)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/2790d77ec441d4ede9b3c80cd2c6f5954e4fddd6", "platform": "github", "publish_date": "2026-05-06T16:44:32.000-05:00", "summary": "Cleanup GenMedia Assets (#2849)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "2790d77ec441d4ede9b3c80cd2c6f5954e4fddd6"}}, {"id": "github-commit-b7f376a2283097d10d583cb4dd93b048f9f74471", "title": "[GoogleCloudPlatform/generative-ai] Remove/Update old content (#2850)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/b7f376a2283097d10d583cb4dd93b048f9f74471", "platform": "github", "publish_date": "2026-05-06T16:29:51.000-05:00", "summary": "Remove/Update old content (#2850)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "b7f376a2283097d10d583cb4dd93b048f9f74471"}}, {"id": "github-commit-e435bceb121fecee992466f2adab0ad90ea4827e", "title": "[GoogleCloudPlatform/generative-ai] Combine Multimodal Embedding and Intro Gemini Embedding Notebooks (#2848)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/e435bceb121fecee992466f2adab0ad90ea4827e", "platform": "github", "publish_date": "2026-05-06T11:49:21.000-05:00", "summary": "Combine Multimodal Embedding and Intro Gemini Embedding Notebooks (#2848)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "e435bceb121fecee992466f2adab0ad90ea4827e"}}, {"id": "github-commit-9533c209331251f2a4b4b3a8ff8aaebdf4c7eaf1", "title": "[GoogleCloudPlatform/generative-ai] Remove outdated samples (#2844)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/9533c209331251f2a4b4b3a8ff8aaebdf4c7eaf1", "platform": "github", "publish_date": "2026-05-06T09:11:23.000-05:00", "summary": "Remove outdated samples (#2844)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "9533c209331251f2a4b4b3a8ff8aaebdf4c7eaf1"}}, {"id": "github-commit-56adb9e2a03513f697d2a5374ef98e13e226e429", "title": "[GoogleCloudPlatform/generative-ai] Remove out of date materials (#2841)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/56adb9e2a03513f697d2a5374ef98e13e226e429", "platform": "github", "publish_date": "2026-05-05T11:48:03.000-05:00", "summary": "Remove out of date materials (#2841)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "56adb9e2a03513f697d2a5374ef98e13e226e429"}}, {"id": "github-commit-5ed33521ef78e6052339fa5ea2a263af59369af8", "title": "[GoogleCloudPlatform/generative-ai] Remove/update out of date materials (#2840)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/5ed33521ef78e6052339fa5ea2a263af59369af8", "platform": "github", "publish_date": "2026-05-05T11:17:19.000-05:00", "summary": "Remove/update out of date materials (#2840)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "5ed33521ef78e6052339fa5ea2a263af59369af8"}}, {"id": "github-commit-4f6f5c20bf68fb7584c10259a76b9beba1607bff", "title": "[GoogleCloudPlatform/generative-ai] Switch formatting to shell script from nox (#2819)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/4f6f5c20bf68fb7584c10259a76b9beba1607bff", "platform": "github", "publish_date": "2026-04-30T12:25:41.000-05:00", "summary": "Switch formatting to shell script from nox (#2819)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "4f6f5c20bf68fb7584c10259a76b9beba1607bff"}}, {"id": "github-commit-ca6f5c3acc51ac747e5a6bcfc2c01c2a92edfafc", "title": "[GoogleCloudPlatform/generative-ai] Update Logo and links in Notebook Template and noxfile (#2818)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/ca6f5c3acc51ac747e5a6bcfc2c01c2a92edfafc", "platform": "github", "publish_date": "2026-04-30T10:28:16.000-05:00", "summary": "Update Logo and links in Notebook Template and noxfile (#2818)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "ca6f5c3acc51ac747e5a6bcfc2c01c2a92edfafc"}}, {"id": "github-commit-b72be667323eadbdf162e34de6cbcc0c08baca19", "title": "[GoogleCloudPlatform/generative-ai] Update Intro Video", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/b72be667323eadbdf162e34de6cbcc0c08baca19", "platform": "github", "publish_date": "2026-04-24T17:48:43.000-07:00", "summary": "Update Intro Video", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "b72be667323eadbdf162e34de6cbcc0c08baca19"}}, {"id": "github-commit-37e6c7ac63aae56a2f93669315b79789631c322d", "title": "[GoogleCloudPlatform/generative-ai] Update key files with new branding for Agent Platform (#2813)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/37e6c7ac63aae56a2f93669315b79789631c322d", "platform": "github", "publish_date": "2026-04-24T17:30:47.000-07:00", "summary": "Update key files with new branding for Agent Platform (#2813)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "37e6c7ac63aae56a2f93669315b79789631c322d"}}, {"id": "github-commit-636cbbc06c18ba7861a68a2f634d9779a8223cbe", "title": "[GoogleCloudPlatform/generative-ai] Added Agent Platform Announcement to README", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/636cbbc06c18ba7861a68a2f634d9779a8223cbe", "platform": "github", "publish_date": "2026-04-22T09:05:30.000-07:00", "summary": "Added Agent Platform Announcement to README", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "636cbbc06c18ba7861a68a2f634d9779a8223cbe"}}, {"id": "github-commit-66d7a8344e1505f009c9f6536a817d05adc610c9", "title": "[GoogleCloudPlatform/generative-ai] Remove outdated examples/demos (#2782)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/66d7a8344e1505f009c9f6536a817d05adc610c9", "platform": "github", "publish_date": "2026-04-13T12:36:36.000-05:00", "summary": "Remove outdated examples/demos (#2782)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "66d7a8344e1505f009c9f6536a817d05adc610c9"}}, {"id": "github-commit-0e622d972d081dd8829bddea1587e56f268a4fd5", "title": "[GoogleCloudPlatform/agent-starter-pack] feat: filter Gemini Enterprise apps by `appType` in `list_gemini_enterprise_apps` function (#912)", "url": "https://github.com/GoogleCloudPlatform/agent-starter-pack/commit/0e622d972d081dd8829bddea1587e56f268a4fd5", "platform": "github", "publish_date": "2026-03-30T16:38:11.000-05:00", "summary": "feat: filter Gemini Enterprise apps by `appType` in `list_gemini_enterprise_apps` function (#912)\n\n* feat: filter Gemini Enterprise apps by appType in `list_gemini_enterprise_apps` function\n\n- Previously, this would show all Vertex AI Search and Gemini Enterprise apps, and VAIS apps can't be connected\n- Added a filter for the `appType`\n  - See https://docs.cloud.google.com/gemini/enterprise/docs/create-app#create-app\n\n* Formatting", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/agent-starter-pack", "type": "commit", "sha": "0e622d972d081dd8829bddea1587e56f268a4fd5"}}, {"id": "github-commit-ee440a62222a5ca5e4247d8a3c49607354da308e", "title": "[google-gemini/gemini-skills] Change example to use gemini-api-dev", "url": "https://github.com/google-gemini/gemini-skills/commit/ee440a62222a5ca5e4247d8a3c49607354da308e", "platform": "github", "publish_date": "2026-03-04T18:22:07.000+01:00", "summary": "Change example to use gemini-api-dev", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "ee440a62222a5ca5e4247d8a3c49607354da308e"}}, {"id": "github-commit-d90205e5a67731754ace98edd7ce33cddec2ce3e", "title": "[google-gemini/gemini-skills] Restructure README after merge", "url": "https://github.com/google-gemini/gemini-skills/commit/d90205e5a67731754ace98edd7ce33cddec2ce3e", "platform": "github", "publish_date": "2026-03-04T18:21:01.000+01:00", "summary": "Restructure README after merge", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "d90205e5a67731754ace98edd7ce33cddec2ce3e"}}, {"id": "github-commit-ac3d60363bd50274fba73e349fddd05b57fdf3cf", "title": "[google-gemini/gemini-skills] Merge branch 'main' of https://github.com/google-gemini/gemini-skills into vertexai-skill", "url": "https://github.com/google-gemini/gemini-skills/commit/ac3d60363bd50274fba73e349fddd05b57fdf3cf", "platform": "github", "publish_date": "2026-03-04T18:18:43.000+01:00", "summary": "Merge branch 'main' of https://github.com/google-gemini/gemini-skills into vertexai-skill", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "ac3d60363bd50274fba73e349fddd05b57fdf3cf"}}, {"id": "github-commit-5e5bb3bc19695fb6720a78deddf08d2e42f12229", "title": "[google-gemini/gemini-skills] Update the skills list and presentation", "url": "https://github.com/google-gemini/gemini-skills/commit/5e5bb3bc19695fb6720a78deddf08d2e42f12229", "platform": "github", "publish_date": "2026-03-04T17:56:14.000+01:00", "summary": "Update the skills list and presentation", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "5e5bb3bc19695fb6720a78deddf08d2e42f12229"}}, {"id": "github-commit-42fa4d7c83ab8c937a89c75e4c09ffdabd233c5d", "title": "[google-gemini/gemini-skills] Formatting", "url": "https://github.com/google-gemini/gemini-skills/commit/42fa4d7c83ab8c937a89c75e4c09ffdabd233c5d", "platform": "github", "publish_date": "2026-02-20T14:18:30.000-06:00", "summary": "Formatting", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "42fa4d7c83ab8c937a89c75e4c09ffdabd233c5d"}}, {"id": "github-commit-14d9886ac79250f5cd86c2d4e29a13c70a164bc2", "title": "[google-gemini/gemini-skills] Fix Thinking examples to use thinking_level", "url": "https://github.com/google-gemini/gemini-skills/commit/14d9886ac79250f5cd86c2d4e29a13c70a164bc2", "platform": "github", "publish_date": "2026-02-20T14:14:56.000-06:00", "summary": "Fix Thinking examples to use thinking_level", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "14d9886ac79250f5cd86c2d4e29a13c70a164bc2"}}, {"id": "github-commit-0b24216b567cd3e9f818e3009d4806a90931ac93", "title": "[google-gemini/gemini-skills] Add examples for Safety Filters", "url": "https://github.com/google-gemini/gemini-skills/commit/0b24216b567cd3e9f818e3009d4806a90931ac93", "platform": "github", "publish_date": "2026-02-20T14:14:33.000-06:00", "summary": "Add examples for Safety Filters", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "0b24216b567cd3e9f818e3009d4806a90931ac93"}}, {"id": "github-commit-7e553836283b40de5100b46e6623a4c95315d3e0", "title": "[google-gemini/gemini-skills] Create new references for skills and split out files for clarity", "url": "https://github.com/google-gemini/gemini-skills/commit/7e553836283b40de5100b46e6623a4c95315d3e0", "platform": "github", "publish_date": "2026-02-20T14:09:32.000-06:00", "summary": "Create new references for skills and split out files for clarity", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "7e553836283b40de5100b46e6623a4c95315d3e0"}}, {"id": "github-commit-8f02f8d910aa6a9c4a5d6eac96a5e28d0e31531e", "title": "[google-gemini/gemini-skills] Split out skill into multiple references", "url": "https://github.com/google-gemini/gemini-skills/commit/8f02f8d910aa6a9c4a5d6eac96a5e28d0e31531e", "platform": "github", "publish_date": "2026-02-20T13:37:05.000-06:00", "summary": "Split out skill into multiple references", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "8f02f8d910aa6a9c4a5d6eac96a5e28d0e31531e"}}, {"id": "github-commit-0cedc77dbbe7e508f4d9d3fb9dd24709dc92ac9a", "title": "[google-gemini/gemini-skills] Apply suggestions from code review", "url": "https://github.com/google-gemini/gemini-skills/commit/0cedc77dbbe7e508f4d9d3fb9dd24709dc92ac9a", "platform": "github", "publish_date": "2026-02-20T12:29:16.000-06:00", "summary": "Apply suggestions from code review\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "0cedc77dbbe7e508f4d9d3fb9dd24709dc92ac9a"}}, {"id": "github-commit-3ced34aa39c642dffd0f4d33c0dddc58068a809f", "title": "[google-gemini/gemini-skills] Add python files to gitignore", "url": "https://github.com/google-gemini/gemini-skills/commit/3ced34aa39c642dffd0f4d33c0dddc58068a809f", "platform": "github", "publish_date": "2026-02-20T12:28:26.000-06:00", "summary": "Add python files to gitignore", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "3ced34aa39c642dffd0f4d33c0dddc58068a809f"}}, {"id": "github-commit-8975e1072fa11f2f49c52bff47d92c73d9ecd243", "title": "[google-gemini/gemini-skills] Create initial Vertex AI API skill", "url": "https://github.com/google-gemini/gemini-skills/commit/8975e1072fa11f2f49c52bff47d92c73d9ecd243", "platform": "github", "publish_date": "2026-02-20T12:14:20.000-06:00", "summary": "Create initial Vertex AI API skill", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "8975e1072fa11f2f49c52bff47d92c73d9ecd243"}}, {"id": "github-commit-0f9f7e450f05cfffc00bd26fea57fc9f1d35bac6", "title": "[google-gemini/gemini-skills] Add .gitignore including macOS Files", "url": "https://github.com/google-gemini/gemini-skills/commit/0f9f7e450f05cfffc00bd26fea57fc9f1d35bac6", "platform": "github", "publish_date": "2026-02-20T11:42:54.000-06:00", "summary": "Add .gitignore including macOS Files", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-skills", "type": "commit", "sha": "0f9f7e450f05cfffc00bd26fea57fc9f1d35bac6"}}, {"id": "github-commit-a5e834e4e91e873901c062288e7c72f9025f7f79", "title": "[GoogleCloudPlatform/generative-ai] Add forbidden check for project id", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/a5e834e4e91e873901c062288e7c72f9025f7f79", "platform": "github", "publish_date": "2026-02-20T10:28:07.000-06:00", "summary": "Add forbidden check for project id", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "a5e834e4e91e873901c062288e7c72f9025f7f79"}}, {"id": "github-commit-6b3b8be870b14d475268fae702de1f04a19c8184", "title": "[GoogleCloudPlatform/generative-ai] Add grounding citations to Gemini 3.1 NB (#2624)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/6b3b8be870b14d475268fae702de1f04a19c8184", "platform": "github", "publish_date": "2026-02-20T10:24:46.000-06:00", "summary": "Add grounding citations to Gemini 3.1 NB (#2624)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "6b3b8be870b14d475268fae702de1f04a19c8184"}}, {"id": "github-commit-032061a2c206ca6af9ce5270992b7edf37d0eecc", "title": "[GoogleCloudPlatform/generative-ai] Update Notebooks from gemini 3 pro to gemini 3.1 pro (#2620)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/032061a2c206ca6af9ce5270992b7edf37d0eecc", "platform": "github", "publish_date": "2026-02-19T11:42:15.000-06:00", "summary": "Update Notebooks from gemini 3 pro to gemini 3.1 pro (#2620)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "032061a2c206ca6af9ce5270992b7edf37d0eecc"}}, {"id": "github-commit-1735d4980a22265b71d41d7a2c78433a5b4cfca4", "title": "[GoogleCloudPlatform/generative-ai] Add Gemini 3.1 Pro Intro Notebook (#2618)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/1735d4980a22265b71d41d7a2c78433a5b4cfca4", "platform": "github", "publish_date": "2026-02-19T10:00:12.000-06:00", "summary": "Add Gemini 3.1 Pro Intro Notebook (#2618)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "1735d4980a22265b71d41d7a2c78433a5b4cfca4"}}, {"id": "github-commit-51058b98c000d13cc1e582ee0ab28de062cffadb", "title": "[GoogleCloudPlatform/generative-ai] Re-add restart runtime to sft notebook", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/51058b98c000d13cc1e582ee0ab28de062cffadb", "platform": "github", "publish_date": "2026-02-12T09:44:08.000-06:00", "summary": "Re-add restart runtime to sft notebook\n\nfixes b/483416876", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "51058b98c000d13cc1e582ee0ab28de062cffadb"}}, {"id": "github-commit-be8ffa519aeb7cede8347dec7d1bedf71814d981", "title": "[GoogleCloudPlatform/generative-ai] Migrate official Notebooks from Gemini 2.0 to Gemini 3 (#2601)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/be8ffa519aeb7cede8347dec7d1bedf71814d981", "platform": "github", "publish_date": "2026-02-06T10:41:49.000-06:00", "summary": "Migrate official Notebooks from Gemini 2.0 to Gemini 3 (#2601)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "be8ffa519aeb7cede8347dec7d1bedf71814d981"}}, {"id": "github-commit-8f64a0b4933659d1ca2326676b7898641f3951b2", "title": "[GoogleCloudPlatform/generative-ai] Update endpoint usage examples in styleguide.md", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/8f64a0b4933659d1ca2326676b7898641f3951b2", "platform": "github", "publish_date": "2026-02-03T11:31:49.000-06:00", "summary": "Update endpoint usage examples in styleguide.md\n\nClarify usage of endpoints in style guide with examples.", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "8f64a0b4933659d1ca2326676b7898641f3951b2"}}, {"id": "github-commit-179592cf902c37667977b95964512ea44f2cc3df", "title": "[GoogleCloudPlatform/generative-ai] Move intro to Gen AI SDK into `sdk/` folder (#2599)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/179592cf902c37667977b95964512ea44f2cc3df", "platform": "github", "publish_date": "2026-02-03T10:09:20.000-06:00", "summary": "Move intro to Gen AI SDK into `sdk/` folder (#2599)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "179592cf902c37667977b95964512ea44f2cc3df"}}, {"id": "github-commit-9aa6185139961af95cd8cb69d7a2489913a1cddf", "title": "[GoogleCloudPlatform/generative-ai] Update Styleguide with current year", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/9aa6185139961af95cd8cb69d7a2489913a1cddf", "platform": "github", "publish_date": "2026-01-27T11:37:30.000-06:00", "summary": "Update Styleguide with current year", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "9aa6185139961af95cd8cb69d7a2489913a1cddf"}}, {"id": "github-commit-5395295f6e0a9edd597789a3982eb39d4b27fa2e", "title": "[GoogleCloudPlatform/generative-ai] Add OpenAI Migration (#2575)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/5395295f6e0a9edd597789a3982eb39d4b27fa2e", "platform": "github", "publish_date": "2026-01-06T14:32:21.000-06:00", "summary": "Add OpenAI Migration (#2575)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "5395295f6e0a9edd597789a3982eb39d4b27fa2e"}}, {"id": "github-commit-9febcebfe0c7ff7ceaf3b2ea79933cb99767fb41", "title": "[GoogleCloudPlatform/nodejs-docs-samples] Revert \"feat(genai): Adding count token samples (#4200)\" (#4206)", "url": "https://github.com/GoogleCloudPlatform/nodejs-docs-samples/commit/9febcebfe0c7ff7ceaf3b2ea79933cb99767fb41", "platform": "github", "publish_date": "2025-12-25T09:51:08.000-06:00", "summary": "Revert \"feat(genai): Adding count token samples (#4200)\" (#4206)\n\nThis reverts commit b2c188e00bae1becf0aeec20421fc9088d6bb57e.", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/nodejs-docs-samples", "type": "commit", "sha": "9febcebfe0c7ff7ceaf3b2ea79933cb99767fb41"}}, {"id": "github-commit-9d1b80e35103f5ad7244c02b0d95d16bb165a24a", "title": "[GoogleCloudPlatform/nodejs-docs-samples] ci(genai): Update `genai` directory to run tests in specific directories only (#4203)", "url": "https://github.com/GoogleCloudPlatform/nodejs-docs-samples/commit/9d1b80e35103f5ad7244c02b0d95d16bb165a24a", "platform": "github", "publish_date": "2025-12-18T13:34:25.000-06:00", "summary": "ci(genai): Update `genai` directory to run tests in specific directories only (#4203)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/nodejs-docs-samples", "type": "commit", "sha": "9d1b80e35103f5ad7244c02b0d95d16bb165a24a"}}, {"id": "github-commit-f1938201e0b14370ce5cb797e5bc265a552ba9fa", "title": "[GoogleCloudPlatform/generative-ai] Revise style guide for Google GenAI SDK usage", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/f1938201e0b14370ce5cb797e5bc265a552ba9fa", "platform": "github", "publish_date": "2025-12-17T10:43:40.000-06:00", "summary": "Revise style guide for Google GenAI SDK usage\n\nUpdated the style guide to reflect changes in the Google GenAI SDK usage, including installation instructions and model recommendations.", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "f1938201e0b14370ce5cb797e5bc265a552ba9fa"}}, {"id": "github-commit-b3c458786e2fdd79e7f3a7106495a2e1a0f8db2a", "title": "[GoogleCloudPlatform/generative-ai] Update README with Model Release", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/b3c458786e2fdd79e7f3a7106495a2e1a0f8db2a", "platform": "github", "publish_date": "2025-12-17T09:54:39.000-06:00", "summary": "Update README with Model Release\n\nUpdated release information and corrected model references in the README.", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "b3c458786e2fdd79e7f3a7106495a2e1a0f8db2a"}}, {"id": "github-commit-d7613f8b3c5048277fd8e40d89a514bc0dc4689e", "title": "[GoogleCloudPlatform/generative-ai] Add Gemini 3 Flash Intro Notebook (#2552)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/d7613f8b3c5048277fd8e40d89a514bc0dc4689e", "platform": "github", "publish_date": "2025-12-17T09:52:13.000-06:00", "summary": "Add Gemini 3 Flash Intro Notebook (#2552)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "d7613f8b3c5048277fd8e40d89a514bc0dc4689e"}}, {"id": "github-commit-1b154eac22267bbe97329cea60445683fb0269b9", "title": "[GoogleCloudPlatform/generative-ai] chore: Update 2.5 Flash Live Audio Model for GA (#2548)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/1b154eac22267bbe97329cea60445683fb0269b9", "platform": "github", "publish_date": "2025-12-12T10:35:08.000-06:00", "summary": "chore: Update 2.5 Flash Live Audio Model for GA (#2548)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "1b154eac22267bbe97329cea60445683fb0269b9"}}, {"id": "github-commit-521f64943d5b6fd4f4d124b81ac6ef23b0f4ae50", "title": "[GoogleCloudPlatform/generative-ai] docs: Update PR template to specify when creating a new notebook", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/521f64943d5b6fd4f4d124b81ac6ef23b0f4ae50", "platform": "github", "publish_date": "2025-12-02T11:23:25.000-06:00", "summary": "docs: Update PR template to specify when creating a new notebook", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "521f64943d5b6fd4f4d124b81ac6ef23b0f4ae50"}}, {"id": "github-commit-3be14b6a43ab1c12499b5320f66e374c48985eeb", "title": "[GoogleCloudPlatform/generative-ai] update langchain gemini notebook for 1.0 (#2537)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/3be14b6a43ab1c12499b5320f66e374c48985eeb", "platform": "github", "publish_date": "2025-12-02T09:05:05.000-06:00", "summary": "update langchain gemini notebook for 1.0 (#2537)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "3be14b6a43ab1c12499b5320f66e374c48985eeb"}}, {"id": "github-commit-48482ff79c6d7ea194d5c19664a58b77ebf1b659", "title": "[GoogleCloudPlatform/generative-ai] Update Link updater", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/48482ff79c6d7ea194d5c19664a58b77ebf1b659", "platform": "github", "publish_date": "2025-11-24T10:55:45.000-06:00", "summary": "Update Link updater", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "48482ff79c6d7ea194d5c19664a58b77ebf1b659"}}, {"id": "github-commit-94206eb4b58ce8f69d4c521871a98995f0380038", "title": "[GoogleCloudPlatform/generative-ai] Update MM Usecases Library", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/94206eb4b58ce8f69d4c521871a98995f0380038", "platform": "github", "publish_date": "2025-11-24T10:41:11.000-06:00", "summary": "Update MM Usecases Library", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "94206eb4b58ce8f69d4c521871a98995f0380038"}}, {"id": "github-commit-a9c4fcda2f62c329367fa9f069c11d16e68928ca", "title": "[GoogleCloudPlatform/generative-ai] Add Gemini 3 to README", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/a9c4fcda2f62c329367fa9f069c11d16e68928ca", "platform": "github", "publish_date": "2025-11-24T10:29:35.000-06:00", "summary": "Add Gemini 3 to README", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "a9c4fcda2f62c329367fa9f069c11d16e68928ca"}}, {"id": "github-commit-ff61e3db1f05980c365f957b4c9ac4fe45805533", "title": "[GoogleCloudPlatform/generative-ai] Fix links in gemini 3 image gen", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/ff61e3db1f05980c365f957b4c9ac4fe45805533", "platform": "github", "publish_date": "2025-11-20T11:12:37.000-06:00", "summary": "Fix links in gemini 3 image gen", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "ff61e3db1f05980c365f957b4c9ac4fe45805533"}}, {"id": "github-commit-cd6240021bca0d8b9889acff92c8aa7b836a0cf5", "title": "[GoogleCloudPlatform/generative-ai] Update legacy code refactor model and library", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/cd6240021bca0d8b9889acff92c8aa7b836a0cf5", "platform": "github", "publish_date": "2025-11-20T11:12:25.000-06:00", "summary": "Update legacy code refactor model and library", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "cd6240021bca0d8b9889acff92c8aa7b836a0cf5"}}, {"id": "github-commit-022f1639b807b2f14cec9a956d2cff26e59597d2", "title": "[GoogleCloudPlatform/generative-ai] Shorten list of notebooks to test", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/022f1639b807b2f14cec9a956d2cff26e59597d2", "platform": "github", "publish_date": "2025-11-20T11:06:44.000-06:00", "summary": "Shorten list of notebooks to test", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "022f1639b807b2f14cec9a956d2cff26e59597d2"}}, {"id": "github-commit-71e15495ac3b969cc7a218abc81906dce9f208b1", "title": "[GoogleCloudPlatform/generative-ai] disable JSCPD", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/71e15495ac3b969cc7a218abc81906dce9f208b1", "platform": "github", "publish_date": "2025-11-20T09:53:21.000-06:00", "summary": "disable JSCPD", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "71e15495ac3b969cc7a218abc81906dce9f208b1"}}, {"id": "github-commit-727fbc1f4aca956018ef13a0d8c85f23bf80772b", "title": "[GoogleCloudPlatform/generative-ai] Set google-genai to 1.50.0 (#2508)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/727fbc1f4aca956018ef13a0d8c85f23bf80772b", "platform": "github", "publish_date": "2025-11-19T17:01:34.000-08:00", "summary": "Set google-genai to 1.50.0 (#2508)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "727fbc1f4aca956018ef13a0d8c85f23bf80772b"}}, {"id": "github-commit-3f8d63650123d53c0a7b5e82f2aadb9ce9805d18", "title": "[google-gemini/gemini-cli] docs: Add Code Wiki link to README (#13289)", "url": "https://github.com/google-gemini/gemini-cli/commit/3f8d63650123d53c0a7b5e82f2aadb9ce9805d18", "platform": "github", "publish_date": "2025-11-19T10:15:41.000-08:00", "summary": "docs: Add Code Wiki link to README (#13289)", "metrics": {}, "extra_metadata": {"repo": "google-gemini/gemini-cli", "type": "commit", "sha": "3f8d63650123d53c0a7b5e82f2aadb9ce9805d18"}}, {"id": "github-commit-8a720501392c0f8e5757ea2a926c8537f4429c47", "title": "[GoogleCloudPlatform/generative-ai] Fix broken GitHub Logo (#2469)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/8a720501392c0f8e5757ea2a926c8537f4429c47", "platform": "github", "publish_date": "2025-11-06T12:29:09.000-06:00", "summary": "Fix broken GitHub Logo (#2469)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "8a720501392c0f8e5757ea2a926c8537f4429c47"}}, {"id": "github-commit-e4ea60d032ca0a373e0ad2c12a6176f87ca84fe9", "title": "[GoogleCloudPlatform/generative-ai] Update Gemini Style Guide", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/e4ea60d032ca0a373e0ad2c12a6176f87ca84fe9", "platform": "github", "publish_date": "2025-10-10T11:26:51.000-05:00", "summary": "Update Gemini Style Guide", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "e4ea60d032ca0a373e0ad2c12a6176f87ca84fe9"}}, {"id": "github-commit-fba853c37eafa164dbf49c7bcfcac794f68703cc", "title": "[GoogleCloudPlatform/generative-ai] Remove expect from spelling README", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/fba853c37eafa164dbf49c7bcfcac794f68703cc", "platform": "github", "publish_date": "2025-10-10T10:33:15.000-05:00", "summary": "Remove expect from spelling README", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "fba853c37eafa164dbf49c7bcfcac794f68703cc"}}, {"id": "github-commit-ebfc9d320be466625df7274f86df32fd513220ed", "title": "[GoogleCloudPlatform/generative-ai] Fix Gemini Enterprise Docs Links", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/ebfc9d320be466625df7274f86df32fd513220ed", "platform": "github", "publish_date": "2025-10-09T09:13:53.000-05:00", "summary": "Fix Gemini Enterprise Docs Links", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "ebfc9d320be466625df7274f86df32fd513220ed"}}, {"id": "github-commit-6d697f9dae300c7e16452dee3b41a4b62417aa60", "title": "[GoogleCloudPlatform/generative-ai] Launch Gemini Enterprise Notebooks (#2405)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/6d697f9dae300c7e16452dee3b41a4b62417aa60", "platform": "github", "publish_date": "2025-10-09T08:53:54.000-05:00", "summary": "Launch Gemini Enterprise Notebooks (#2405)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "6d697f9dae300c7e16452dee3b41a4b62417aa60"}}, {"id": "github-commit-4237f69ca378f88d7df82cffa4ab910748651806", "title": "[GoogleCloudPlatform/generative-ai] chore: Update Notebook Template", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/4237f69ca378f88d7df82cffa4ab910748651806", "platform": "github", "publish_date": "2025-10-07T13:09:25.000-05:00", "summary": "chore: Update Notebook Template", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "4237f69ca378f88d7df82cffa4ab910748651806"}}, {"id": "github-commit-d08bfe468eb4038ffe7ca0c3888ab07748bdce13", "title": "[GoogleCloudPlatform/python-docs-samples] docs(genai): Update quickstart_example.py to use us-east4 as default region (#13577)", "url": "https://github.com/GoogleCloudPlatform/python-docs-samples/commit/d08bfe468eb4038ffe7ca0c3888ab07748bdce13", "platform": "github", "publish_date": "2025-10-06T11:07:05.000-05:00", "summary": "docs(genai): Update quickstart_example.py to use us-east4 as default region (#13577)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/python-docs-samples", "type": "commit", "sha": "d08bfe468eb4038ffe7ca0c3888ab07748bdce13"}}, {"id": "github-commit-a8ec9f8a0031a87c9d54f90a8deeb9a3e4490800", "title": "[GoogleCloudPlatform/python-docs-samples] revert: \"docs: Remove Grounded Generation Samples\" (#13564)", "url": "https://github.com/GoogleCloudPlatform/python-docs-samples/commit/a8ec9f8a0031a87c9d54f90a8deeb9a3e4490800", "platform": "github", "publish_date": "2025-09-18T21:25:35.000-05:00", "summary": "revert: \"docs: Remove Grounded Generation Samples\" (#13564)\n\n* Revert \"docs: Remove Grounded Generation Samples (#13244)\"\n\nThis reverts commit 9e52ed65606868832870878b8630e42bb033e5b5.\n\n* Update models to use default\n\n* fix lint error", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/python-docs-samples", "type": "commit", "sha": "a8ec9f8a0031a87c9d54f90a8deeb9a3e4490800"}}, {"id": "github-commit-e9f96660ca0d3290d7a76b45e0409d1a4556adde", "title": "[GoogleCloudPlatform/generative-ai] style: Auto-add `fmt:skip` to param lines in Notebooks (#2323)", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/e9f96660ca0d3290d7a76b45e0409d1a4556adde", "platform": "github", "publish_date": "2025-09-12T10:25:46.000-05:00", "summary": "style: Auto-add `fmt:skip` to param lines in Notebooks (#2323)\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "e9f96660ca0d3290d7a76b45e0409d1a4556adde"}}, {"id": "github-commit-86ce1576d206d5c7844c8a2436a08eff788f2c74", "title": "[GoogleCloudPlatform/vertex-ai-samples] Delete notebooks/official/model_evaluation/automl_video_classification_model_evaluation.ipynb (#4256)", "url": "https://github.com/GoogleCloudPlatform/vertex-ai-samples/commit/86ce1576d206d5c7844c8a2436a08eff788f2c74", "platform": "github", "publish_date": "2025-09-10T18:32:08.000-05:00", "summary": "Delete notebooks/official/model_evaluation/automl_video_classification_model_evaluation.ipynb (#4256)", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/vertex-ai-samples", "type": "commit", "sha": "86ce1576d206d5c7844c8a2436a08eff788f2c74"}}, {"id": "github-commit-c2b743bfeb27dbe6c8a9015ceedc7a4e984d6431", "title": "[GoogleCloudPlatform/vertex-ai-samples] Removed Deprecated notebooks", "url": "https://github.com/GoogleCloudPlatform/vertex-ai-samples/commit/c2b743bfeb27dbe6c8a9015ceedc7a4e984d6431", "platform": "github", "publish_date": "2025-09-10T18:31:40.000-05:00", "summary": "Removed Deprecated notebooks", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/vertex-ai-samples", "type": "commit", "sha": "c2b743bfeb27dbe6c8a9015ceedc7a4e984d6431"}}, {"id": "github-commit-bc43ea6f1749f7492032aed97c6138f678913f18", "title": "[GoogleCloudPlatform/generative-ai] Formatting for A2A on Agent Engine", "url": "https://github.com/GoogleCloudPlatform/generative-ai/commit/bc43ea6f1749f7492032aed97c6138f678913f18", "platform": "github", "publish_date": "2025-09-10T12:47:55.000-05:00", "summary": "Formatting for A2A on Agent Engine", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/generative-ai", "type": "commit", "sha": "bc43ea6f1749f7492032aed97c6138f678913f18"}}, {"id": "github-commit-828f1a26fa9fba63170109630154f7b92d1db14c", "title": "[GoogleCloudPlatform/vertex-ai-samples] Delete notebooks/official/pipelines/google_cloud_pipeline_components_automl_text.ipynb (#4254)", "url": "https://github.com/GoogleCloudPlatform/vertex-ai-samples/commit/828f1a26fa9fba63170109630154f7b92d1db14c", "platform": "github", "publish_date": "2025-09-09T15:43:03.000-05:00", "summary": "Delete notebooks/official/pipelines/google_cloud_pipeline_components_automl_text.ipynb (#4254)\n\nb/442906902", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/vertex-ai-samples", "type": "commit", "sha": "828f1a26fa9fba63170109630154f7b92d1db14c"}}, {"id": "github-commit-915e5edf0af0137f9e9dd9e5a1d3db1be5b58c13", "title": "[GoogleCloudPlatform/vertex-ai-samples] chore: Remove AutoML Notebooks for deprecated Text and Video features (#4253)", "url": "https://github.com/GoogleCloudPlatform/vertex-ai-samples/commit/915e5edf0af0137f9e9dd9e5a1d3db1be5b58c13", "platform": "github", "publish_date": "2025-09-09T11:49:06.000-05:00", "summary": "chore: Remove AutoML Notebooks for deprecated Text and Video features (#4253)\n\n* chore: Remove AutoML Notebooks for deprecated Text and Video features\n\n* Remove remaining Text/Video samples", "metrics": {}, "extra_metadata": {"repo": "GoogleCloudPlatform/vertex-ai-samples", "type": "commit", "sha": "915e5edf0af0137f9e9dd9e5a1d3db1be5b58c13"}}, {"id": "medium-post-https://medium.com/google-cloud/vertex-ai-search-leverage-the-power-of-google-search-and-gemini-for-your-information-needs-05bb7914c28d", "title": "[Medium] Vertex AI Search: Leverage the Power of Google Search and Gemini for Your Information Needs", "url": "https://medium.com/google-cloud/vertex-ai-search-leverage-the-power-of-google-search-and-gemini-for-your-information-needs-05bb7914c28d", "platform": "medium", "publish_date": "2024-07-30T18:32:11+00:00", "summary": "One of the significant challenges organizations face is the discoverability of information. Data often resides in disparate sources — ranging from documents and databases to web pages — making it diff...", "metrics": {}, "extra_metadata": {"author": "Holt Skinner", "tags": ["generative-ai-tools", "vertex-ai-search", "vertex-ai-agent-builder", "google-cloud-platform", "vertex-ai"]}}, {"id": "youtube-video-j4-LXxOlCOA", "title": "[YouTube] Cómo automatizar tareas, extraer datos y tomar mejores decisiones con Document AI de Google Cloud", "url": "https://www.youtube.com/watch?v=j4-LXxOlCOA", "platform": "youtube", "publish_date": "2023-12-19T03:27:18-08:00", "summary": "Con Pronectis y GCP crea procesadores de documentos que ayuden a automatizar las tareas tediosas, mejorar la extracción de datos y obtener estadísticas más d...", "metrics": {}, "extra_metadata": {"video_id": "j4-LXxOlCOA", "channel_id": "", "channel_title": "PRONECTIS", "thumbnail_url": "https://i.ytimg.com/vi/j4-LXxOlCOA/hqdefault.jpg"}}, {"id": "youtube-video-95FvHHKH5Bg", "title": "[YouTube] What is Document AI Warehouse?", "url": "https://www.youtube.com/watch?v=95FvHHKH5Bg", "platform": "youtube", "publish_date": "2022-12-12T16:00:05-08:00", "summary": "Document AI Warehouse Documentation → https://goo.gle/3Hb5NPHDocument AI Warehouse Codelab → https://goo.gle/3hhMTvrDocument AI Overview → https://goo.gle/3B...", "metrics": {}, "extra_metadata": {"video_id": "95FvHHKH5Bg", "channel_id": "", "channel_title": "Google Cloud Tech", "thumbnail_url": "https://i.ytimg.com/vi/95FvHHKH5Bg/hqdefault.jpg"}}, {"id": "youtube-video-qeuRQAityB8", "title": "[YouTube] What is Human-in-the-Loop?", "url": "https://www.youtube.com/watch?v=qeuRQAityB8", "platform": "youtube", "publish_date": "2022-12-05T16:00:15-08:00", "summary": "Guide → https://goo.gle/3FRrDa8Supported processors → https://goo.gle/3GPlNGRHuman-in-the-Loop (HITL) plays a critical role in Machine Learning workflows, bu...", "metrics": {}, "extra_metadata": {"video_id": "qeuRQAityB8", "channel_id": "", "channel_title": "Google Cloud Tech", "thumbnail_url": "https://i.ytimg.com/vi/qeuRQAityB8/hqdefault.jpg"}}, {"id": "youtube-video-BkE69dM0G-w", "title": "[YouTube] What is Document AI Workbench?", "url": "https://www.youtube.com/watch?v=BkE69dM0G-w", "platform": "youtube", "publish_date": "2022-11-28T16:00:09-08:00", "summary": "Previously, Holt discussed Document AI Specialized processors and how they can provide intelligent insights into certain document types. However, what if you...", "metrics": {}, "extra_metadata": {"video_id": "BkE69dM0G-w", "channel_id": "", "channel_title": "Google Cloud Tech", "thumbnail_url": "https://i.ytimg.com/vi/BkE69dM0G-w/hqdefault.jpg"}}, {"id": "youtube-video-9izcbNYmP8M", "title": "[YouTube] How to use Document AI", "url": "https://www.youtube.com/watch?v=9izcbNYmP8M", "platform": "youtube", "publish_date": "2022-08-02T16:00:08-07:00", "summary": "Document AI Documentation → https://goo.gle/3cPgGcLDocument AI Optical Character Recognition (OCR) Codelab → https://goo.gle/3OVnmnOManaging Document AI proc...", "metrics": {}, "extra_metadata": {"video_id": "9izcbNYmP8M", "channel_id": "", "channel_title": "Google Cloud Tech", "thumbnail_url": "https://i.ytimg.com/vi/9izcbNYmP8M/hqdefault.jpg"}}, {"id": "youtube-video-F_jyoe1lQhg", "title": "[YouTube] What is Document AI?", "url": "https://www.youtube.com/watch?v=F_jyoe1lQhg", "platform": "youtube", "publish_date": "2022-07-25T16:00:08-07:00", "summary": "Document AI Documentation → https://goo.gle/3Ir7eI9Document AI How-to Guides → https://goo.gle/3c38G7iDocument AI Introductory Codelab → https://goo.gle/3OVn...", "metrics": {}, "extra_metadata": {"video_id": "F_jyoe1lQhg", "channel_id": "", "channel_title": "Google Cloud Tech", "thumbnail_url": "https://i.ytimg.com/vi/F_jyoe1lQhg/hqdefault.jpg"}}];
+        
+        let currentFilter = 'all';
+        let searchQuery = '';
+        let shareChart = null;
+        let timelineChart = null;
+
+        // Populate KPIs initially
+        function calculateKPIs() {
+            const counts = { github: 0, youtube: 0, stackoverflow: 0, medium: 0, rss: 0 };
+            contentData.forEach(item => {
+                if (counts[item.platform] !== undefined) {
+                    counts[item.platform]++;
+                }
+            });
+            document.getElementById('cnt-total').innerText = contentData.length;
+            document.getElementById('cnt-github').innerText = counts.github;
+            document.getElementById('cnt-youtube').innerText = counts.youtube;
+            document.getElementById('cnt-stackoverflow').innerText = counts.stackoverflow;
+            document.getElementById('cnt-medium').innerText = counts.medium;
+        }
+
+        // Filter and Search items
+        function getFilteredItems() {
+            return contentData.filter(item => {
+                const matchesPlatform = (currentFilter === 'all' || item.platform === currentFilter);
+                
+                const searchContent = (
+                    item.title + " " + 
+                    (item.summary || "") + " " + 
+                    (item.platform || "") + " " +
+                    JSON.stringify(item.extra_metadata || {})
+                ).toLowerCase();
+                
+                const matchesSearch = searchQuery === '' || searchContent.includes(searchQuery.toLowerCase());
+                
+                return matchesPlatform && matchesSearch;
+            });
+        }
+
+        // Render Cards
+        function renderItems() {
+            const grid = document.getElementById('itemsGrid');
+            grid.innerHTML = '';
+            
+            const filtered = getFilteredItems();
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="glass-panel no-results">No tracked contributions found matching filters.</div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = `glass-panel content-card ${item.platform}`;
+                
+                // Formatted date
+                let dateStr = "Unknown Date";
+                if (item.publish_date) {
+                    const date = new Date(item.publish_date);
+                    if (!isNaN(date.getTime())) {
+                        dateStr = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                    }
+                }
+
+                // Platform specific rendering detail
+                let iconHtml = '📄';
+                let visualEl = '';
+                let metricsHtml = '';
+
+                if (item.platform === 'github') {
+                    iconHtml = `
+                        <svg width="24" height="24" fill="#a78bfa" viewBox="0 0 24 24">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.182-1.304.347-1.604-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                    `;
+                    const type = item.extra_metadata.type || 'commit';
+                    iconHtml = `<div class="card-icon">${iconHtml}</div>`;
+                    
+                    if (type === 'pull_request') {
+                        metricsHtml = `
+                            <div class="metric-tag">PR #${item.extra_metadata.pr_number || ''}</div>
+                            ${item.metrics.additions ? `<div class="metric-tag" style="color: #10b981">+${item.metrics.additions}</div>` : ''}
+                            ${item.metrics.deletions ? `<div class="metric-tag" style="color: #ef4444">-${item.metrics.deletions}</div>` : ''}
+                        `;
+                    } else if (type === 'commit') {
+                        metricsHtml = `<div class="metric-tag">Commit ${item.extra_metadata.sha ? item.extra_metadata.sha.substring(0,7) : ''}</div>`;
+                    }
+                } else if (item.platform === 'youtube') {
+                    iconHtml = `
+                        <svg width="24" height="24" fill="#ef4444" viewBox="0 0 24 24">
+                            <path d="M23.498 6.163c-.272-.98-1.09-1.755-2.093-2.025C19.562 3.6 12 3.6 12 3.6s-7.562 0-9.405.538C1.59 4.408.773 5.183.5 6.163.025 7.975 0 11.785 0 11.785s.025 3.81.5 5.622c.272.98 1.09 1.758 2.093 2.028C4.438 19.97 12 19.97 12 19.97s7.562 0 9.405-.538c1.003-.27 1.82-.1.045-2.028.475-1.812.5-5.622.5-5.622s-.025-3.81-.5-5.622zM9.545 15.568V8.01L15.818 11.79l-6.273 3.778z"/>
+                        </svg>
+                    `;
+                    iconHtml = `<div class="card-icon">${iconHtml}</div>`;
+                    
+                    if (item.extra_metadata.thumbnail_url) {
+                        visualEl = `
+                            <div class="yt-thumb-container">
+                                <img src="${item.extra_metadata.thumbnail_url}" alt="Thumbnail">
+                            </div>
+                        `;
+                    }
+                    metricsHtml = `<div class="metric-tag">${item.extra_metadata.channel_title || 'YouTube'}</div>`;
+                } else if (item.platform === 'stackoverflow') {
+                    iconHtml = `
+                        <svg width="24" height="24" fill="#f97316" viewBox="0 0 24 24">
+                            <path d="M18.986 21.865v-6.404h2.134V24H1.844v-8.539h2.13v6.404h15.012zM6.111 17.05l10.3-.406.037 2.13-10.3.408-.037-2.132zm.543-4.525l9.96 3.19.646-2.03-9.96-3.19-.646 2.03zm1.61-4.225l8.77 5.67 1.155-1.784-8.77-5.67-1.155 1.784zm2.846-3.556l6.83 7.91 1.62-1.393-6.83-7.91-1.62 1.393zm4.275-2.22l4.28 9.53 1.944-.875-4.28-9.53-1.944.875z"/>
+                        </svg>
+                    `;
+                    iconHtml = `<div class="card-icon">${iconHtml}</div>`;
+                    
+                    const score = item.metrics.score || 0;
+                    const isAccepted = item.metrics.is_accepted;
+                    metricsHtml = `
+                        <div class="metric-tag" style="${isAccepted ? 'border-color: #10b981; color: #10b981' : ''}">
+                            Score: ${score} ${isAccepted ? '✔' : ''}
+                        </div>
+                    `;
+                } else if (item.platform === 'medium') {
+                    iconHtml = `
+                        <svg width="24" height="24" fill="#10b981" viewBox="0 0 24 24">
+                            <path d="M13.54 12a6.8 6.8 0 11-13.54 0 6.8 6.8 0 0113.54 0zM24 12c0 3.535-1.516 6.4-3.385 6.4s-3.387-2.865-3.387-6.4 1.518-6.4 3.387-6.4S24 8.465 24 12zm-6.217 0c0 3.125-.328 5.66-1.733 5.66s-1.731-2.535-1.731-5.66.326-5.66 1.731-5.66 1.733 2.535 1.733 5.66z"/>
+                        </svg>
+                    `;
+                    iconHtml = `<div class="card-icon">${iconHtml}</div>`;
+                    if (item.extra_metadata.author) {
+                        metricsHtml = `<div class="metric-tag">Author: ${item.extra_metadata.author}</div>`;
+                    }
+                } else {
+                    iconHtml = `<div class="card-icon">📰</div>`;
+                    metricsHtml = `<div class="metric-tag">${item.extra_metadata.feed_name || 'RSS'}</div>`;
+                }
+
+                card.innerHTML = `
+                    ${visualEl ? visualEl : iconHtml}
+                    <div class="card-body">
+                        <div class="card-meta">
+                            <span class="card-platform-badge">${item.platform}</span>
+                            <span class="card-date">${dateStr}</span>
+                        </div>
+                        <h4 class="card-title" title="${item.title.replace(/\[.*?\]\s*/, '')}">${item.title.replace(/\[.*?\]\s*/, '')}</h4>
+                        <p class="card-summary">${item.summary || 'No description summary available.'}</p>
+                    </div>
+                    <div class="card-actions">
+                        <div class="card-metrics">
+                            ${metricsHtml}
+                        </div>
+                        <a href="${item.url}" target="_blank" class="btn-visit" title="Open Content Link">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                            </svg>
+                        </a>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Handle text searches
+        function handleSearch() {
+            searchQuery = document.getElementById('searchInput').value;
+            renderItems();
+        }
+
+        // Handle filter clicks
+        function setFilter(platform) {
+            currentFilter = platform;
+            
+            // Toggle active classes
+            const btns = ['all', 'github', 'youtube', 'stackoverflow', 'medium', 'rss'];
+            btns.forEach(b => {
+                const btn = document.getElementById(`btn-${b}`);
+                if (btn) {
+                    if (b === platform) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            });
+
+            renderItems();
+        }
+
+        // Initialize Graphs using ChartJS
+        function renderCharts() {
+            const counts = { github: 0, youtube: 0, stackoverflow: 0, medium: 0, rss: 0 };
+            
+            // Time aggregations
+            const timelineData = {}; // Month-Year string -> count
+            
+            contentData.forEach(item => {
+                if (counts[item.platform] !== undefined) {
+                    counts[item.platform]++;
+                } else {
+                    counts.rss++;
+                }
+
+                if (item.publish_date) {
+                    const d = new Date(item.publish_date);
+                    if (!isNaN(d.getTime())) {
+                        const monthYear = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+                        // To sort easily, map sorting value
+                        const sortVal = d.getFullYear() * 12 + d.getMonth();
+                        if (!timelineData[monthYear]) {
+                            timelineData[monthYear] = { count: 0, sort: sortVal };
+                        }
+                        timelineData[monthYear].count++;
+                    }
+                }
+            });
+
+            // 1. Platform Share Chart
+            const ctxShare = document.getElementById('shareChart').getContext('2d');
+            shareChart = new Chart(ctxShare, {
+                type: 'doughnut',
+                data: {
+                    labels: ['GitHub', 'YouTube', 'Stack Overflow', 'Medium', 'RSS'],
+                    datasets: [{
+                        data: [counts.github, counts.youtube, counts.stackoverflow, counts.medium, counts.rss],
+                        backgroundColor: ['#a78bfa', '#ef4444', '#f97316', '#10b981', '#3b82f6'],
+                        borderColor: '#0c0a0f',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 } }
+                        }
+                    }
+                }
+            });
+
+            // 2. Timeline Chart (sorted chronologically)
+            const sortedTimeline = Object.entries(timelineData)
+                .sort((a, b) => a[1].sort - b[1].sort)
+                .slice(-10); // Display last 10 active months
+                
+            const labels = sortedTimeline.map(e => e[0]);
+            const values = sortedTimeline.map(e => e[1].count);
+
+            const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
+            timelineChart = new Chart(ctxTimeline, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Contributions',
+                        data: values,
+                        backgroundColor: 'rgba(139, 92, 246, 0.4)',
+                        borderColor: '#8b5cf6',
+                        borderWidth: 2,
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                            ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 }, stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Run setup
+        window.addEventListener('DOMContentLoaded', () => {
+            calculateKPIs();
+            renderCharts();
+            renderItems();
+        });
+    </script>
+</body>
+</html>
