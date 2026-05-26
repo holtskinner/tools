@@ -187,3 +187,5 @@ Temporary Items
 .apdisk
 
 keys.yaml
+
+.ruff_cache/
